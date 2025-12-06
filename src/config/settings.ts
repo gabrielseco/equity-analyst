@@ -67,7 +67,10 @@ export async function updateConfig(updates: Partial<Config>): Promise<Config> {
 /**
  * Get API keys from environment variables
  */
-export async function getApiKeys(): Promise<{ anthropic: string; alphaVantage: string }> {
+export async function getApiKeys(): Promise<{
+  anthropic: string;
+  alphaVantage: string;
+}> {
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   const alphaVantageKey = process.env.ALPHA_VANTAGE_API_KEY;
 

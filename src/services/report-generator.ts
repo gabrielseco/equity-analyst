@@ -26,9 +26,9 @@ export class ReportGenerator {
   ): number {
     // Pricing per million tokens (MTok)
     const pricing = {
-      haiku: { input: 1.00, output: 5.00 },
-      sonnet: { input: 3.00, output: 15.00 },
-      opus: { input: 15.00, output: 75.00 },
+      haiku: { input: 1.0, output: 5.0 },
+      sonnet: { input: 3.0, output: 15.0 },
+      opus: { input: 15.0, output: 75.0 },
     };
 
     const modelPricing = pricing[model];
@@ -45,7 +45,12 @@ export class ReportGenerator {
    * Generate complete equity research report
    */
   static async generate(options: GenerateReportOptions): Promise<string> {
-    const { input, model, interactive = false, enableFactCheck = false } = options;
+    const {
+      input,
+      model,
+      interactive = false,
+      enableFactCheck = false,
+    } = options;
 
     try {
       // Get API keys
@@ -56,25 +61,44 @@ export class ReportGenerator {
 
       // Fetch financial data
       const financialService = new FinancialDataService(apiKeys.alphaVantage);
-      const financialData = await financialService.fetchFinancialData(input.ticker, interactive);
+      const financialData = await financialService.fetchFinancialData(
+        input.ticker,
+        interactive
+      );
 
       console.log('✓ Financial data fetched successfully\n');
+
+      // Show fact-checking notification if enabled
+      if (enableFactCheck) {
+        console.log(
+          '🔍 Fact-checking enabled - Claude will verify claims using web search'
+        );
+        console.log(
+          '   (This may add 15-30 seconds and ~$0.10-0.15 to the cost)\n'
+        );
+      }
 
       // Build analysis prompt
       const prompt = buildAnalystPrompt(input, financialData, enableFactCheck);
 
       // Generate analysis with Claude
       const spinnerText = enableFactCheck
-        ? `Calling Claude API (${selectedModel}) with fact-checking enabled...`
-        : `Calling Claude API (${selectedModel})...`;
+        ? `Generating analysis with fact-checking (${selectedModel})...`
+        : `Generating analysis (${selectedModel})...`;
 
       const spinner = ora({
         text: spinnerText,
         color: 'cyan',
       }).start();
 
-      const anthropicService = new AnthropicService(apiKeys.anthropic, selectedModel);
-      const result = await anthropicService.generateAnalysis(prompt, enableFactCheck);
+      const anthropicService = new AnthropicService(
+        apiKeys.anthropic,
+        selectedModel
+      );
+      const result = await anthropicService.generateAnalysis(
+        prompt,
+        enableFactCheck
+      );
 
       // Calculate approximate cost
       const searchCount = result.searchCount || 0;
@@ -85,13 +109,27 @@ export class ReportGenerator {
         searchCount
       );
 
-      const costBreakdown = enableFactCheck && searchCount > 0
-        ? ` | Est. cost: $${cost.toFixed(4)} (including ${searchCount} web searches)`
-        : ` | Est. cost: $${cost.toFixed(4)}`;
+      spinner.succeed('Analysis generated');
 
-      spinner.succeed(
-        `Analysis generated | Tokens: ${result.usage.inputTokens.toLocaleString()} in / ${result.usage.outputTokens.toLocaleString()} out (${result.usage.totalTokens.toLocaleString()} total)${costBreakdown}`
+      // Show detailed statistics
+      console.log(
+        `   Tokens: ${result.usage.inputTokens.toLocaleString()} in / ${result.usage.outputTokens.toLocaleString()} out (${result.usage.totalTokens.toLocaleString()} total)`
       );
+
+      if (enableFactCheck && searchCount > 0) {
+        const tokenCost = cost - (searchCount / 1_000) * 10;
+        const searchCost = (searchCount / 1_000) * 10;
+        console.log(`   Web searches: ${searchCount} performed`);
+        console.log(
+          `   Cost breakdown: $${tokenCost.toFixed(
+            4
+          )} (tokens) + $${searchCost.toFixed(4)} (searches) = $${cost.toFixed(
+            4
+          )} total`
+        );
+      } else {
+        console.log(`   Estimated cost: $${cost.toFixed(4)}`);
+      }
       console.log();
 
       // Create report object
@@ -103,6 +141,8 @@ export class ReportGenerator {
         analysis: result.text,
         generatedAt: new Date().toISOString(),
         financialData,
+        factCheckEnabled: enableFactCheck,
+        searchCount: enableFactCheck ? searchCount : undefined,
       };
 
       // Save to markdown
@@ -111,12 +151,30 @@ export class ReportGenerator {
       const filePath = await MarkdownExporter.saveReport(report, savePath);
 
       console.log(`✅ Report saved successfully!`);
-      console.log(`📄 Location: ${filePath}\n`);
+      console.log(`📄 Location: ${filePath}`);
+
+      // Show summary
+      console.log('\n📊 Report Summary:');
+      console.log(
+        `   Company: ${
+          financialData.overview.name
+        } (${input.ticker.toUpperCase()})`
+      );
+      console.log(`   Model: ${selectedModel}`);
+      console.log(
+        `   Fact-checking: ${enableFactCheck ? '✓ Enabled' : '✗ Disabled'}`
+      );
+      if (enableFactCheck && searchCount > 0) {
+        console.log(`   Web searches: ${searchCount} performed`);
+      }
+      console.log(`   Total cost: $${cost.toFixed(4)}\n`);
 
       return filePath;
     } catch (error) {
       throw new Error(
-        `Failed to generate report: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to generate report: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   }

@@ -7,20 +7,36 @@ export class MarkdownExporter {
    * Generate markdown report content
    */
   static generateMarkdown(report: AnalysisReport): string {
-    const { ticker, companyName, investmentThesis, goal, analysis, generatedAt, financialData } = report;
+    const {
+      ticker,
+      companyName,
+      investmentThesis,
+      goal,
+      analysis,
+      generatedAt,
+      financialData,
+      factCheckEnabled,
+      searchCount,
+    } = report;
+
+    const factCheckBadge = factCheckEnabled
+      ? ` | ✓ Fact-Checked${
+          searchCount ? ` (${searchCount} web searches)` : ''
+        }`
+      : '';
 
     return `# Equity Research Report: ${ticker.toUpperCase()}
 
 **Company**: ${companyName}
 **Generated**: ${new Date(generatedAt).toLocaleDateString('en-US', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit'
-})}
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })}
 **Analyst**: Claude ${this.getModelName()}
-**Data Source**: ${financialData.dataSource}
+**Data Source**: ${financialData.dataSource}${factCheckBadge}
 
 ---
 
@@ -42,18 +58,42 @@ ${analysis}
 
 ### Price as of Analysis
 - **Current Price**: $${financialData.quote.price}
-- **Change**: ${financialData.quote.change} (${financialData.quote.changePercent})
-- **52-Week Range**: $${financialData.quote.fiftyTwoWeekLow || 'N/A'} - $${financialData.quote.fiftyTwoWeekHigh || 'N/A'}
+- **Change**: ${financialData.quote.change} (${
+      financialData.quote.changePercent
+    })
+- **52-Week Range**: $${financialData.quote.fiftyTwoWeekLow || 'N/A'} - $${
+      financialData.quote.fiftyTwoWeekHigh || 'N/A'
+    }
 
 ### Key Metrics
 | Metric | Value |
 |--------|-------|
-| Market Cap | ${financialData.overview.marketCap ? `$${(parseInt(financialData.overview.marketCap) / 1e9).toFixed(2)}B` : 'N/A'} |
+| Market Cap | ${
+      financialData.overview.marketCap
+        ? `$${(parseInt(financialData.overview.marketCap) / 1e9).toFixed(2)}B`
+        : 'N/A'
+    } |
 | P/E Ratio | ${financialData.metrics.peRatio || 'N/A'} |
-| Revenue (TTM) | ${financialData.metrics.revenue ? `$${(parseInt(financialData.metrics.revenue) / 1e9).toFixed(2)}B` : 'N/A'} |
-| Revenue Growth YoY | ${financialData.metrics.revenueGrowthYoY ? (parseFloat(financialData.metrics.revenueGrowthYoY) * 100).toFixed(2) + '%' : 'N/A'} |
+| Revenue (TTM) | ${
+      financialData.metrics.revenue
+        ? `$${(parseInt(financialData.metrics.revenue) / 1e9).toFixed(2)}B`
+        : 'N/A'
+    } |
+| Revenue Growth YoY | ${
+      financialData.metrics.revenueGrowthYoY
+        ? (parseFloat(financialData.metrics.revenueGrowthYoY) * 100).toFixed(
+            2
+          ) + '%'
+        : 'N/A'
+    } |
 | Net Margin | ${financialData.metrics.netMargin || 'N/A'} |
-| Operating Cash Flow | ${financialData.metrics.operatingCashFlow ? `$${(parseInt(financialData.metrics.operatingCashFlow) / 1e9).toFixed(2)}B` : 'N/A'} |
+| Operating Cash Flow | ${
+      financialData.metrics.operatingCashFlow
+        ? `$${(parseInt(financialData.metrics.operatingCashFlow) / 1e9).toFixed(
+            2
+          )}B`
+        : 'N/A'
+    } |
 
 ---
 
@@ -64,7 +104,10 @@ ${analysis}
   /**
    * Save report to file
    */
-  static async saveReport(report: AnalysisReport, savePath: string): Promise<string> {
+  static async saveReport(
+    report: AnalysisReport,
+    savePath: string
+  ): Promise<string> {
     const markdown = this.generateMarkdown(report);
     const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     const filename = `${timestamp}-${report.ticker.toLowerCase()}-analysis.md`;

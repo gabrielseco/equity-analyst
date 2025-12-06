@@ -8,7 +8,9 @@ const program = new Command();
 
 program
   .name('equity-analyst')
-  .description('AI-powered equity research analyst using Claude and financial data APIs')
+  .description(
+    'AI-powered equity research analyst using Claude and financial data APIs'
+  )
   .version('1.0.0');
 
 /**
@@ -35,13 +37,17 @@ async function handleAnalyze(
     } else {
       // Validate required options when using direct mode
       if (!options.thesis) {
-        console.error('Error: --thesis is required when providing ticker directly');
+        console.error(
+          'Error: --thesis is required when providing ticker directly'
+        );
         console.error('Run without arguments for interactive mode');
         process.exit(1);
       }
 
       if (!options.goal) {
-        console.error('Error: --goal is required when providing ticker directly');
+        console.error(
+          'Error: --goal is required when providing ticker directly'
+        );
         console.error('Run without arguments for interactive mode');
         process.exit(1);
       }
@@ -59,20 +65,29 @@ async function handleAnalyze(
       input,
       model: options.model,
       interactive: isInteractive,
-      enableFactCheck: options.factCheck,
+      enableFactCheck: options.factCheck || input.enableFactCheck || false,
     });
   } catch (error) {
-    console.error('\n❌ Error:', error instanceof Error ? error.message : String(error));
+    console.error(
+      '\n❌ Error:',
+      error instanceof Error ? error.message : String(error)
+    );
 
     // Provide helpful hints for common errors
     if (error instanceof Error) {
       if (error.message.includes('API key')) {
-        console.error('\n💡 Tip: Make sure you have set up your API keys in .env file or config');
+        console.error(
+          '\n💡 Tip: Make sure you have set up your API keys in .env file or config'
+        );
         console.error('   See README.md for setup instructions');
       } else if (error.message.includes('Invalid ticker')) {
-        console.error('\n💡 Tip: Make sure the ticker symbol is valid (e.g., AAPL, MSFT, GOOGL)');
+        console.error(
+          '\n💡 Tip: Make sure the ticker symbol is valid (e.g., AAPL, MSFT, GOOGL)'
+        );
       } else if (error.message.includes('rate limit')) {
-        console.error('\n💡 Tip: Alpha Vantage free tier has a limit of 25 calls/day');
+        console.error(
+          '\n💡 Tip: Alpha Vantage free tier has a limit of 25 calls/day'
+        );
         console.error('   Try again tomorrow or upgrade your API plan');
       }
     }

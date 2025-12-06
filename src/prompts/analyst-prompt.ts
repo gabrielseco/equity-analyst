@@ -1,10 +1,15 @@
 import type { FinancialData, AnalysisInput } from '../models/types';
 import { FinancialDataService } from '../services/financial-data';
 
-export function buildAnalystPrompt(input: AnalysisInput, financialData: FinancialData, enableFactCheck: boolean = false): string {
+export function buildAnalystPrompt(
+  input: AnalysisInput,
+  financialData: FinancialData,
+  enableFactCheck: boolean = false
+): string {
   const formattedData = FinancialDataService.formatForPrompt(financialData);
 
-  const factCheckInstructions = enableFactCheck ? `
+  const factCheckInstructions = enableFactCheck
+    ? `
 
 # IMPORTANT: Fact-Checking Instructions
 
@@ -35,7 +40,8 @@ You have access to web search to verify claims and find current information. Use
 
 **Search Budget:** Aim for 15-20 strategic searches focused on the most recent financial data and important claims.
 
-` : '';
+`
+    : '';
 
   return `You are a professional equity research analyst. Your task is to generate a comprehensive equity research report for ${input.ticker.toUpperCase()} based on the provided financial data, the user's investment thesis, and their analysis goal.${factCheckInstructions}
 
@@ -52,7 +58,7 @@ You have access to web search to verify claims and find current information. Use
 
 ${formattedData}
 
-**Note**: The data above represents trailing-twelve-month (TTM) and annual figures. ${enableFactCheck ? 'Use web search to supplement with the latest quarterly data from ' + new Date().getFullYear() + ' and compare with the same quarters from ' + (new Date().getFullYear() - 1) + '.' : 'When possible, reference the most recent quarterly earnings data in your analysis to provide a current view of the company\'s performance.'}
+**Note**: The data above represents trailing-twelve-month (TTM) and annual figures. ${enableFactCheck ? 'Use web search to supplement with the latest quarterly data from ' + new Date().getFullYear() + ' and compare with the same quarters from ' + (new Date().getFullYear() - 1) + '.' : "When possible, reference the most recent quarterly earnings data in your analysis to provide a current view of the company's performance."}
 
 ---
 
@@ -109,7 +115,7 @@ Explain your verdict in 2-3 sentences, weighing the supporting arguments against
 
 ## 3. Sector & Macro View
 
-- **Sector Overview**: Brief analysis of the ${financialData.overview.sector || 'company\'s'} sector's current state and trends.
+- **Sector Overview**: Brief analysis of the ${financialData.overview.sector || "company's"} sector's current state and trends.
 - **Macroeconomic Factors**: Identify 2-3 macroeconomic trends that could impact this stock (interest rates, inflation, consumer spending, etc.).
 - **Competitive Positioning**: Assess the company's position within its industry based on the available data.
 
@@ -157,7 +163,9 @@ Provide a concise summary:
 - **Opportunistic**: If stock drops to $[lower price] on market weakness
 - **Conservative**: Wait for confirmation at $[higher price] after [specific event/catalyst]
 
-${enableFactCheck ? `
+${
+  enableFactCheck
+    ? `
 ## 6. Fact-Check Summary
 
 List all claims you verified using web search:
@@ -172,7 +180,9 @@ List all claims you verified using web search:
 - Partially verified: [number]
 - Updated with new info: [number]
 - Conflicting data found: [number]
-` : ''}
+`
+    : ''
+}
 
 ---
 

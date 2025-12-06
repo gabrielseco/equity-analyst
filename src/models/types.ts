@@ -3,6 +3,7 @@ export interface AnalysisInput {
   investmentThesis: string;
   goal: string;
   saveTo?: string;
+  enableFactCheck?: boolean;
 }
 
 export interface CompanyOverview {
@@ -85,6 +86,8 @@ export interface AnalysisReport {
   analysis: string;
   generatedAt: string;
   financialData: FinancialData;
+  factCheckEnabled?: boolean;
+  searchCount?: number;
   factChecks?: FactCheckResult[];
   searchUsage?: {
     searchCount: number;

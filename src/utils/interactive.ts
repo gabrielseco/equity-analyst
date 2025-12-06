@@ -63,7 +63,9 @@ export async function runInteractive(): Promise<AnalysisInput> {
       const input = await question(rl, 'What is your investment thesis?\n  > ');
 
       if (!input || input.length < 10) {
-        console.log('❌ Please provide a meaningful investment thesis (at least 10 characters).\n');
+        console.log(
+          '❌ Please provide a meaningful investment thesis (at least 10 characters).\n'
+        );
         continue;
       }
 
@@ -84,7 +86,9 @@ export async function runInteractive(): Promise<AnalysisInput> {
       const input = await question(rl, '  > ');
 
       if (!input || input.length < 10) {
-        console.log('❌ Please provide a clear analysis goal (at least 10 characters).\n');
+        console.log(
+          '❌ Please provide a clear analysis goal (at least 10 characters).\n'
+        );
         continue;
       }
 
@@ -95,10 +99,30 @@ export async function runInteractive(): Promise<AnalysisInput> {
     // Step 4: Get save location
     const defaultDir = await getDefaultReportsDir();
     console.log(`\nWhere should I save the report?`);
-    const saveInput = await question(rl, `  (press Enter for default: ${defaultDir})\n  > `);
+    const saveInput = await question(
+      rl,
+      `  (press Enter for default: ${defaultDir})\n  > `
+    );
     const saveTo = saveInput || defaultDir;
 
     console.log(`✓ Report will be saved to: ${saveTo}\n`);
+
+    // Step 5: Ask about fact-checking
+    console.log('Enable fact-checking with web search?');
+    console.log(
+      '  This will verify claims using current sources (+15-30 seconds, +$0.10-0.15 cost)'
+    );
+    const factCheckInput = await question(rl, '  (Y/n) > ');
+    const enableFactCheck =
+      !factCheckInput ||
+      factCheckInput.toLowerCase() === 'y' ||
+      factCheckInput.toLowerCase() === 'yes';
+
+    if (enableFactCheck) {
+      console.log('✓ Fact-checking enabled\n');
+    } else {
+      console.log('✓ Fact-checking disabled\n');
+    }
 
     rl.close();
 
@@ -107,6 +131,7 @@ export async function runInteractive(): Promise<AnalysisInput> {
       investmentThesis,
       goal,
       saveTo,
+      enableFactCheck,
     };
   } catch (error) {
     rl.close();

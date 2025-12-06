@@ -3,9 +3,9 @@ import type {
   FinancialMetrics,
   StockQuote,
   FinancialData,
-} from "../models/types";
+} from '../models/types';
 
-const ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query";
+const ALPHA_VANTAGE_BASE_URL = 'https://www.alphavantage.co/query';
 
 export class FinancialDataService {
   private apiKey: string;
@@ -33,17 +33,17 @@ export class FinancialDataService {
     try {
       const response = await fetch(url);
       const data = (await response.json()) as {
-        "Error Message"?: string;
+        'Error Message'?: string;
         Note?: string;
         bestMatches?: any[];
       };
 
-      if (data["Error Message"]) {
-        throw new Error(`Symbol search failed: ${data["Error Message"]}`);
+      if (data['Error Message']) {
+        throw new Error(`Symbol search failed: ${data['Error Message']}`);
       }
 
-      if (data["Note"]) {
-        throw new Error("API rate limit reached. Please try again later.");
+      if (data['Note']) {
+        throw new Error('API rate limit reached. Please try again later.');
       }
 
       if (!data.bestMatches || data.bestMatches.length === 0) {
@@ -51,11 +51,11 @@ export class FinancialDataService {
       }
 
       return data.bestMatches.map((match: any) => ({
-        symbol: match["1. symbol"],
-        name: match["2. name"],
-        type: match["3. type"],
-        region: match["4. region"],
-        matchScore: match["9. matchScore"],
+        symbol: match['1. symbol'],
+        name: match['2. name'],
+        type: match['3. type'],
+        region: match['4. region'],
+        matchScore: match['9. matchScore'],
       }));
     } catch (error) {
       throw new Error(
@@ -88,7 +88,7 @@ export class FinancialDataService {
       const data = (await response.json()) as any;
 
       // If we get valid data back, it's already a ticker
-      if (data.Symbol && !data["Error Message"] && !data["Note"]) {
+      if (data.Symbol && !data['Error Message'] && !data['Note']) {
         return {
           symbol: data.Symbol,
           name: data.Name || inputUpper,
@@ -105,15 +105,15 @@ export class FinancialDataService {
 
     // Filter for US equity matches
     const equityMatches = matches.filter(
-      (match) => match.type === "Equity" && match.region === "United States"
+      (match) => match.type === 'Equity' && match.region === 'United States'
     );
 
     if (equityMatches.length === 0) {
       // Fall back to all matches if no US equities found
       if (matches.length > 0) {
         return {
-          symbol: matches[0]?.symbol || "",
-          name: matches[0]?.name || "",
+          symbol: matches[0]?.symbol || '',
+          name: matches[0]?.name || '',
           isResolved: true,
         };
       }
@@ -136,8 +136,8 @@ export class FinancialDataService {
       `✓ Found ${equityMatches.length} match(es). Using best match: ${bestMatch?.symbol} - ${bestMatch?.name}`
     );
     return {
-      symbol: bestMatch?.symbol || "",
-      name: bestMatch?.name || "",
+      symbol: bestMatch?.symbol || '',
+      name: bestMatch?.name || '',
       isResolved: true,
     };
   }
@@ -154,7 +154,7 @@ export class FinancialDataService {
       matchScore: string;
     }[]
   ): Promise<{ symbol: string; name: string }> {
-    const readline = await import("readline");
+    const readline = await import('readline');
 
     const rl = readline.createInterface({
       input: process.stdin,
@@ -181,8 +181,8 @@ export class FinancialDataService {
             );
             rl.close();
             resolve({
-              symbol: selected?.symbol || "",
-              name: selected?.name || "",
+              symbol: selected?.symbol || '',
+              name: selected?.name || '',
             });
           } else {
             console.log(
@@ -205,7 +205,7 @@ export class FinancialDataService {
     try {
       const response = await fetch(url);
       const data = (await response.json()) as {
-        "Error Message"?: string;
+        'Error Message'?: string;
         Note?: string;
         Name?: string;
         Symbol?: string;
@@ -218,12 +218,12 @@ export class FinancialDataService {
       };
 
       // Check for API errors
-      if (data["Error Message"]) {
+      if (data['Error Message']) {
         throw new Error(`Invalid ticker symbol: ${ticker}`);
       }
 
-      if (data["Note"]) {
-        throw new Error("API rate limit reached. Please try again later.");
+      if (data['Note']) {
+        throw new Error('API rate limit reached. Please try again later.');
       }
 
       return {
@@ -255,21 +255,21 @@ export class FinancialDataService {
       const response = await fetch(url);
       const data = (await response.json()) as any;
 
-      const quote = data["Global Quote"];
+      const quote = data['Global Quote'];
 
       if (!quote || Object.keys(quote).length === 0) {
         throw new Error(`No quote data available for ${ticker}`);
       }
 
       return {
-        price: quote["05. price"] || "0",
-        change: quote["09. change"] || "0",
-        changePercent: quote["10. change percent"] || "0%",
-        high: quote["03. high"] || "0",
-        low: quote["04. low"] || "0",
-        open: quote["02. open"] || "0",
-        previousClose: quote["08. previous close"] || "0",
-        volume: quote["06. volume"] || "0",
+        price: quote['05. price'] || '0',
+        change: quote['09. change'] || '0',
+        changePercent: quote['10. change percent'] || '0%',
+        high: quote['03. high'] || '0',
+        low: quote['04. low'] || '0',
+        open: quote['02. open'] || '0',
+        previousClose: quote['08. previous close'] || '0',
+        volume: quote['06. volume'] || '0',
       };
     } catch (error) {
       throw new Error(
@@ -295,7 +295,7 @@ export class FinancialDataService {
       const data = (await response.json()) as any;
 
       // Check for errors
-      if (data["Error Message"] || data["Note"]) {
+      if (data['Error Message'] || data['Note']) {
         return {}; // Return empty object if balance sheet not available
       }
 
@@ -336,7 +336,7 @@ export class FinancialDataService {
       const data = (await response.json()) as any;
 
       // Check for errors
-      if (data["Error Message"] || data["Note"]) {
+      if (data['Error Message'] || data['Note']) {
         return {}; // Return empty object if cash flow not available
       }
 
@@ -394,7 +394,7 @@ export class FinancialDataService {
               (parseFloat(overviewData.GrossProfitTTM) /
                 parseFloat(overviewData.RevenueTTM)) *
               100
-            ).toFixed(2) + "%"
+            ).toFixed(2) + '%'
           : undefined,
       operatingIncome: overviewData.OperatingIncomeTTM,
       operatingMargin: overviewData.OperatingMarginTTM,
@@ -441,13 +441,13 @@ export class FinancialDataService {
     const overviewData = (await response.json()) as any;
 
     // Check for errors
-    if (overviewData["Error Message"]) {
+    if (overviewData['Error Message']) {
       throw new Error(`Invalid ticker symbol: ${tickerUpper}`);
     }
 
-    if (overviewData["Note"]) {
+    if (overviewData['Note']) {
       throw new Error(
-        "API rate limit reached (25 calls/day). Please try again later or use cached data."
+        'API rate limit reached (25 calls/day). Please try again later or use cached data.'
       );
     }
 
@@ -469,14 +469,14 @@ export class FinancialDataService {
     const metrics = this.parseMetrics(overviewData, balanceSheet, cashFlow);
 
     // Add 52-week high/low from overview
-    quote.fiftyTwoWeekHigh = overviewData["52WeekHigh"];
-    quote.fiftyTwoWeekLow = overviewData["52WeekLow"];
+    quote.fiftyTwoWeekHigh = overviewData['52WeekHigh'];
+    quote.fiftyTwoWeekLow = overviewData['52WeekLow'];
 
     return {
       overview,
       quote,
       metrics,
-      dataSource: "Alpha Vantage",
+      dataSource: 'Alpha Vantage',
       fetchedAt: new Date().toISOString(),
     };
   }
@@ -491,21 +491,21 @@ export class FinancialDataService {
 ## Company Information
 - **Name**: ${overview.name}
 - **Ticker**: ${overview.symbol}
-- **Sector**: ${overview.sector || "N/A"}
-- **Industry**: ${overview.industry || "N/A"}
+- **Sector**: ${overview.sector || 'N/A'}
+- **Industry**: ${overview.industry || 'N/A'}
 - **Market Cap**: ${
       overview.marketCap
         ? `$${(parseInt(overview.marketCap) / 1e9).toFixed(2)}B`
-        : "N/A"
+        : 'N/A'
     }
-- **Exchange**: ${overview.exchange || "N/A"}
+- **Exchange**: ${overview.exchange || 'N/A'}
 
 ## Current Stock Data
 - **Price**: $${quote.price}
 - **Change**: ${quote.change} (${quote.changePercent})
 - **Day Range**: $${quote.low} - $${quote.high}
-- **52-Week Range**: $${quote.fiftyTwoWeekLow || "N/A"} - $${
-      quote.fiftyTwoWeekHigh || "N/A"
+- **52-Week Range**: $${quote.fiftyTwoWeekLow || 'N/A'} - $${
+      quote.fiftyTwoWeekHigh || 'N/A'
     }
 - **Volume**: ${parseInt(quote.volume).toLocaleString()}
 
@@ -514,33 +514,33 @@ export class FinancialDataService {
 - **Revenue**: ${
       metrics.revenue
         ? `$${(parseInt(metrics.revenue) / 1e9).toFixed(2)}B`
-        : "N/A"
+        : 'N/A'
     }
 - **Revenue Growth YoY**: ${
       metrics.revenueGrowthYoY
-        ? (parseFloat(metrics.revenueGrowthYoY) * 100).toFixed(2) + "%"
-        : "N/A"
+        ? (parseFloat(metrics.revenueGrowthYoY) * 100).toFixed(2) + '%'
+        : 'N/A'
     }
-- **Gross Margin**: ${metrics.grossMargin || "N/A"}
-- **Operating Margin**: ${metrics.operatingMargin || "N/A"}
-- **Net Margin**: ${metrics.netMargin || "N/A"}
-- **EPS**: $${metrics.eps || "N/A"}
+- **Gross Margin**: ${metrics.grossMargin || 'N/A'}
+- **Operating Margin**: ${metrics.operatingMargin || 'N/A'}
+- **Net Margin**: ${metrics.netMargin || 'N/A'}
+- **EPS**: $${metrics.eps || 'N/A'}
 
 ### Balance Sheet
 - **Total Assets**: ${
       metrics.totalAssets
         ? `$${(parseFloat(metrics.totalAssets) / 1e9).toFixed(2)}B`
-        : "N/A"
+        : 'N/A'
     }
 - **Total Liabilities**: ${
       metrics.totalLiabilities
         ? `$${(parseFloat(metrics.totalLiabilities) / 1e9).toFixed(2)}B`
-        : "N/A"
+        : 'N/A'
     }
 - **Shareholder Equity**: ${
       metrics.totalEquity
         ? `$${(parseFloat(metrics.totalEquity) / 1e9).toFixed(2)}B`
-        : "N/A"
+        : 'N/A'
     }
 - **Debt-to-Equity Ratio**: ${
       metrics.totalLiabilities && metrics.totalEquity
@@ -548,37 +548,37 @@ export class FinancialDataService {
             parseFloat(metrics.totalLiabilities) /
             parseFloat(metrics.totalEquity)
           ).toFixed(2)
-        : "N/A"
+        : 'N/A'
     }
 
 ### Cash Flow
 - **Operating Cash Flow**: ${
       metrics.operatingCashFlow
         ? `$${(parseFloat(metrics.operatingCashFlow) / 1e9).toFixed(2)}B`
-        : "N/A"
+        : 'N/A'
     }
 - **Free Cash Flow**: ${
       metrics.freeCashFlow
         ? `$${(parseFloat(metrics.freeCashFlow) / 1e9).toFixed(2)}B`
-        : "N/A"
+        : 'N/A'
     }
 - **FCF Margin**: ${
       metrics.freeCashFlow && metrics.revenue
         ? (
             (parseFloat(metrics.freeCashFlow) / parseFloat(metrics.revenue)) *
             100
-          ).toFixed(2) + "%"
-        : "N/A"
+          ).toFixed(2) + '%'
+        : 'N/A'
     }
 
 ### Valuation
-- **P/E Ratio**: ${metrics.peRatio || "N/A"}
-- **P/B Ratio**: ${metrics.pbRatio || "N/A"}
-- **EV/EBITDA**: ${metrics.evToEbitda || "N/A"}
-- **Dividend Yield**: ${metrics.dividendYield || "N/A"}
+- **P/E Ratio**: ${metrics.peRatio || 'N/A'}
+- **P/B Ratio**: ${metrics.pbRatio || 'N/A'}
+- **EV/EBITDA**: ${metrics.evToEbitda || 'N/A'}
+- **Dividend Yield**: ${metrics.dividendYield || 'N/A'}
 
 ## Company Description
-${overview.description || "No description available"}
+${overview.description || 'No description available'}
 `.trim();
   }
 }
