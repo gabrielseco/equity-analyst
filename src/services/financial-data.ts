@@ -4,8 +4,11 @@ import type {
   StockQuote,
   FinancialData,
 } from '../models/types';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
 
 const ALPHA_VANTAGE_BASE_URL = 'https://www.alphavantage.co/query';
+const CACHE_DIR = '.cache/financial-data';
 
 export class FinancialDataService {
   private apiKey: string;
@@ -377,6 +380,52 @@ export class FinancialDataService {
   }
 
   /**
+   * Get cached financial data if it exists and is less than 24 hours old
+   */
+  private getCachedData(ticker: string): FinancialData | null {
+    try {
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      const cachePath = join(
+        CACHE_DIR,
+        `${ticker.toUpperCase()}-${today}.json`
+      );
+
+      if (existsSync(cachePath)) {
+        const cached = JSON.parse(readFileSync(cachePath, 'utf-8'));
+        return cached;
+      }
+
+      return null;
+    } catch (error) {
+      // If there's any error reading cache, return null and fetch fresh data
+      return null;
+    }
+  }
+
+  /**
+   * Save financial data to cache
+   */
+  private cacheData(ticker: string, data: FinancialData): void {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+
+      // Create cache directory if it doesn't exist
+      if (!existsSync(CACHE_DIR)) {
+        mkdirSync(CACHE_DIR, { recursive: true });
+      }
+
+      const cachePath = join(
+        CACHE_DIR,
+        `${ticker.toUpperCase()}-${today}.json`
+      );
+      writeFileSync(cachePath, JSON.stringify(data, null, 2));
+    } catch (error) {
+      // Non-critical error - just log it and continue
+      console.warn('⚠️  Could not save data to cache');
+    }
+  }
+
+  /**
    * Parse financial metrics from overview data
    */
   private parseMetrics(
@@ -433,6 +482,16 @@ export class FinancialDataService {
 
     const tickerUpper = resolved.symbol.toUpperCase();
 
+    // Check cache first
+    const cached = this.getCachedData(tickerUpper);
+    if (cached) {
+      console.log(`✓ Using cached data for ${tickerUpper} (fetched today)`);
+      console.log(
+        `   Data source: ${cached.dataSource} | Cached at: ${new Date(cached.fetchedAt).toLocaleTimeString()}`
+      );
+      return cached;
+    }
+
     console.log(`📊 Fetching financial data for ${tickerUpper}...`);
 
     // Fetch overview data (contains most metrics)
@@ -472,13 +531,19 @@ export class FinancialDataService {
     quote.fiftyTwoWeekHigh = overviewData['52WeekHigh'];
     quote.fiftyTwoWeekLow = overviewData['52WeekLow'];
 
-    return {
+    const financialData: FinancialData = {
       overview,
       quote,
       metrics,
       dataSource: 'Alpha Vantage',
       fetchedAt: new Date().toISOString(),
     };
+
+    // Cache the data
+    this.cacheData(tickerUpper, financialData);
+    console.log(`✓ Data cached for 24 hours`);
+
+    return financialData;
   }
 
   /**

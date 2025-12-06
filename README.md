@@ -6,7 +6,9 @@ An AI-powered equity research tool that generates professional stock analysis re
 
 - **Interactive CLI** - Guided prompts for easy use
 - **Real Financial Data** - Integrates with Alpha Vantage API for live market data
+- **Smart Caching** - 24-hour cache reduces API calls and speeds up repeat analyses
 - **AI-Powered Analysis** - Uses Claude AI for professional-grade research reports
+- **Web Search Fact-Checking** - Optional verification of claims using current sources (see [FACT_CHECKING.md](./FACT_CHECKING.md))
 - **Professional Reports** - Generates markdown reports following equity research best practices
 - **Flexible Models** - Choose between Haiku (fast), Sonnet (balanced), or Opus (thorough)
 - **Customizable** - Support for custom analysis goals and investment theses
@@ -245,16 +247,41 @@ Evaluate as core portfolio holding
 [... rest of report ...]
 ```
 
-## API Rate Limits
+## API Rate Limits & Caching
 
 ### Alpha Vantage (Free Tier)
 
 - **25 calls per day**
 - **5 calls per minute**
 
-Each analysis uses **2 API calls** (overview + quote), so you can generate ~12 reports per day.
+Each analysis uses **5 API calls** (overview, quote, balance sheet, cash flow, company info).
 
-💡 **Tip**: Cache is planned for Phase 2 to reduce API calls!
+### Smart Caching ✨
+
+The tool automatically caches financial data for **24 hours**:
+
+- ✅ **First fetch**: Data retrieved from Alpha Vantage API
+- ✅ **Subsequent fetches**: Instant load from cache (same day)
+- ✅ **Auto-expiry**: Cache refreshes daily
+- ✅ **Zero config**: Works automatically
+
+**Example:**
+```bash
+# First run - fetches from API
+bun run start AAPL --thesis "..." --goal "..."
+# Output: 📊 Fetching financial data for AAPL...
+#         ✓ Data cached for 24 hours
+
+# Second run same day - uses cache
+bun run start AAPL --thesis "..." --goal "..."
+# Output: ✓ Using cached data for AAPL (fetched today)
+#         Data source: Alpha Vantage | Cached at: 2:30:45 PM
+```
+
+This means you can:
+- Generate multiple reports for the same stock without hitting API limits
+- Iterate on your analysis thesis/goal quickly
+- Save API calls for analyzing different stocks
 
 ### Anthropic
 

@@ -2,6 +2,41 @@
 
 ## [Unreleased] - 2025-12-06
 
+### Added 24-Hour Smart Caching for Financial Data
+
+Implemented automatic caching of financial data to reduce API calls and improve performance.
+
+#### Changes
+
+**1. Cache Implementation**
+
+- Financial data is now cached for 24 hours after first fetch
+- Cache files stored in `.cache/financial-data/` directory
+- Cache key format: `{TICKER}-{YYYY-MM-DD}.json`
+- Automatic cache directory creation
+
+**2. User-Visible Improvements**
+
+- Clear cache hit indicator: `✓ Using cached data for AAPL (fetched today)`
+- Shows when data was originally cached: `Data source: Alpha Vantage | Cached at: 2:30:45 PM`
+- Cache miss shows: `✓ Data cached for 24 hours` after successful fetch
+
+**3. Benefits**
+
+- ✅ Dramatically reduces API calls (5 calls → 0 for repeat analyses)
+- ✅ Instant data loading for cached tickers
+- ✅ Allows multiple report iterations with different theses/goals
+- ✅ Helps stay within Alpha Vantage free tier limits (25 calls/day)
+- ✅ Zero configuration required - works automatically
+
+**Technical Details:**
+
+- Modified file: `src/services/financial-data.ts`
+- Added imports: `fs`, `path`
+- New methods: `getCachedData()`, `cacheData()`
+- Updated method: `fetchFinancialData()` - checks cache before API call
+- Cache directory already in `.gitignore`
+
 ### Enhanced Fact-Checking User Communication
 
 Improved user awareness and transparency when fact-checking is enabled.
