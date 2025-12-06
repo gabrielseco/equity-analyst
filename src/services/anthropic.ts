@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { FactCheckResult } from "../models/types";
 
 export interface AnalysisResult {
   text: string;
@@ -7,6 +8,8 @@ export interface AnalysisResult {
     outputTokens: number;
     totalTokens: number;
   };
+  factChecks?: FactCheckResult[];
+  searchCount?: number;
 }
 
 export class AnthropicService {
@@ -28,11 +31,12 @@ export class AnthropicService {
   }
 
   /**
-   * Generate equity research analysis using Claude
+   * Generate equity research analysis using Claude with optional fact-checking
    */
-  async generateAnalysis(prompt: string): Promise<AnalysisResult> {
+  async generateAnalysis(prompt: string, enableFactCheck: boolean = false): Promise<AnalysisResult> {
     try {
-      const response = await this.client.messages.create({
+      // Build the base request parameters
+      const requestParams: Anthropic.MessageCreateParams = {
         model: this.model,
         max_tokens: 8000,
         temperature: 0.7,
@@ -42,21 +46,41 @@ export class AnthropicService {
             content: prompt,
           },
         ],
-      });
+      };
 
-      const content = response.content[0];
-      if (content?.type === "text") {
-        return {
-          text: content?.text || "",
-          usage: {
-            inputTokens: response.usage.input_tokens,
-            outputTokens: response.usage.output_tokens,
-            totalTokens: response.usage.input_tokens + response.usage.output_tokens,
-          },
-        };
+      // Add web search tool if fact-checking is enabled
+      if (enableFactCheck) {
+        requestParams.tools = [
+          {
+            type: "web_search_20250305",
+            name: "web_search",
+            max_uses: 15, // Moderate fact-checking: up to 15 searches
+          } as any, // TypeScript might not have latest types yet
+        ];
       }
 
-      throw new Error("Unexpected response format from Claude");
+      const response = await this.client.messages.create(requestParams);
+
+      // Extract text content from response
+      let text = "";
+      for (const block of response.content) {
+        if (block.type === "text") {
+          text += block.text;
+        }
+      }
+
+      if (!text) {
+        throw new Error("No text content in response");
+      }
+
+      return {
+        text,
+        usage: {
+          inputTokens: response.usage.input_tokens,
+          outputTokens: response.usage.output_tokens,
+          totalTokens: response.usage.input_tokens + response.usage.output_tokens,
+        },
+      };
     } catch (error) {
       throw new Error(
         `Failed to generate analysis: ${

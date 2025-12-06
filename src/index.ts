@@ -21,6 +21,7 @@ async function handleAnalyze(
     goal?: string;
     saveTo?: string;
     model?: 'haiku' | 'sonnet' | 'opus';
+    factCheck?: boolean;
   }
 ) {
   try {
@@ -58,6 +59,7 @@ async function handleAnalyze(
       input,
       model: options.model,
       interactive: isInteractive,
+      enableFactCheck: options.factCheck,
     });
   } catch (error) {
     console.error('\n❌ Error:', error instanceof Error ? error.message : String(error));
@@ -92,6 +94,10 @@ program
     'AI model: haiku (fast/cheap), sonnet (balanced), opus (thorough)',
     'sonnet'
   )
+  .option(
+    '-f, --fact-check',
+    'Enable web search fact-checking (adds ~$0.10-0.15 per report)'
+  )
   .action(handleAnalyze);
 
 // Make 'analyze' the default command
@@ -104,6 +110,10 @@ program
     '-m, --model <model>',
     'AI model: haiku (fast/cheap), sonnet (balanced), opus (thorough)',
     'sonnet'
+  )
+  .option(
+    '-f, --fact-check',
+    'Enable web search fact-checking (adds ~$0.10-0.15 per report)'
   )
   .action(handleAnalyze);
 

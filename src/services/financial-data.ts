@@ -17,14 +17,18 @@ export class FinancialDataService {
   /**
    * Search for ticker symbol by company name
    */
-  private async searchSymbol(query: string): Promise<{
-    symbol: string;
-    name: string;
-    type: string;
-    region: string;
-    matchScore: string;
-  }[]> {
-    const url = `${ALPHA_VANTAGE_BASE_URL}?function=SYMBOL_SEARCH&keywords=${encodeURIComponent(query)}&apikey=${this.apiKey}`;
+  private async searchSymbol(query: string): Promise<
+    {
+      symbol: string;
+      name: string;
+      type: string;
+      region: string;
+      matchScore: string;
+    }[]
+  > {
+    const url = `${ALPHA_VANTAGE_BASE_URL}?function=SYMBOL_SEARCH&keywords=${encodeURIComponent(
+      query
+    )}&apikey=${this.apiKey}`;
 
     try {
       const response = await fetch(url);
@@ -108,8 +112,8 @@ export class FinancialDataService {
       // Fall back to all matches if no US equities found
       if (matches.length > 0) {
         return {
-          symbol: matches[0].symbol,
-          name: matches[0].name,
+          symbol: matches[0]?.symbol || "",
+          name: matches[0]?.name || "",
           isResolved: true,
         };
       }
@@ -129,11 +133,11 @@ export class FinancialDataService {
     // Return the best match (highest match score)
     const bestMatch = equityMatches[0];
     console.log(
-      `✓ Found ${equityMatches.length} match(es). Using best match: ${bestMatch.symbol} - ${bestMatch.name}`
+      `✓ Found ${equityMatches.length} match(es). Using best match: ${bestMatch?.symbol} - ${bestMatch?.name}`
     );
     return {
-      symbol: bestMatch.symbol,
-      name: bestMatch.name,
+      symbol: bestMatch?.symbol || "",
+      name: bestMatch?.name || "",
       isResolved: true,
     };
   }
@@ -141,13 +145,15 @@ export class FinancialDataService {
   /**
    * Prompt user to choose from multiple ticker matches
    */
-  private async promptForSymbolChoice(matches: {
-    symbol: string;
-    name: string;
-    type: string;
-    region: string;
-    matchScore: string;
-  }[]): Promise<{ symbol: string; name: string }> {
+  private async promptForSymbolChoice(
+    matches: {
+      symbol: string;
+      name: string;
+      type: string;
+      region: string;
+      matchScore: string;
+    }[]
+  ): Promise<{ symbol: string; name: string }> {
     const readline = await import("readline");
 
     const rl = readline.createInterface({
@@ -158,34 +164,33 @@ export class FinancialDataService {
     console.log(`\nFound ${matches.length} matches:`);
     matches.forEach((match, index) => {
       console.log(
-        `  ${index + 1}. ${match.symbol} - ${match.name} (Match: ${(parseFloat(match.matchScore) * 100).toFixed(0)}%)`
+        `  ${index + 1}. ${match.symbol} - ${match.name} (Match: ${(
+          parseFloat(match.matchScore) * 100
+        ).toFixed(0)}%)`
       );
     });
 
     return new Promise((resolve) => {
       const askChoice = () => {
-        rl.question(
-          `\nSelect a ticker (1-${matches.length}): `,
-          (answer) => {
-            const choice = parseInt(answer.trim());
-            if (choice >= 1 && choice <= matches.length) {
-              const selected = matches[choice - 1];
-              console.log(
-                `✓ Selected: ${selected.symbol} - ${selected.name}\n`
-              );
-              rl.close();
-              resolve({
-                symbol: selected.symbol,
-                name: selected.name,
-              });
-            } else {
-              console.log(
-                `❌ Invalid choice. Please enter a number between 1 and ${matches.length}.`
-              );
-              askChoice();
-            }
+        rl.question(`\nSelect a ticker (1-${matches.length}): `, (answer) => {
+          const choice = parseInt(answer.trim());
+          if (choice >= 1 && choice <= matches.length) {
+            const selected = matches[choice - 1];
+            console.log(
+              `✓ Selected: ${selected?.symbol} - ${selected?.name}\n`
+            );
+            rl.close();
+            resolve({
+              symbol: selected?.symbol || "",
+              name: selected?.name || "",
+            });
+          } else {
+            console.log(
+              `❌ Invalid choice. Please enter a number between 1 and ${matches.length}.`
+            );
+            askChoice();
           }
-        );
+        });
       };
       askChoice();
     });
@@ -276,9 +281,109 @@ export class FinancialDataService {
   }
 
   /**
+   * Fetch balance sheet data
+   */
+  private async fetchBalanceSheet(ticker: string): Promise<{
+    totalAssets?: string;
+    totalLiabilities?: string;
+    totalEquity?: string;
+  }> {
+    const url = `${ALPHA_VANTAGE_BASE_URL}?function=BALANCE_SHEET&symbol=${ticker}&apikey=${this.apiKey}`;
+
+    try {
+      const response = await fetch(url);
+      const data = (await response.json()) as any;
+
+      // Check for errors
+      if (data["Error Message"] || data["Note"]) {
+        return {}; // Return empty object if balance sheet not available
+      }
+
+      // Get the most recent annual report
+      const annualReports = data.annualReports;
+      if (!annualReports || annualReports.length === 0) {
+        return {};
+      }
+
+      const latestReport = annualReports[0];
+
+      return {
+        totalAssets: latestReport.totalAssets,
+        totalLiabilities: latestReport.totalLiabilities,
+        totalEquity: latestReport.totalShareholderEquity,
+      };
+    } catch (error) {
+      console.warn(
+        `⚠️  Could not fetch balance sheet: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      return {};
+    }
+  }
+
+  /**
+   * Fetch cash flow data
+   */
+  private async fetchCashFlow(ticker: string): Promise<{
+    operatingCashFlow?: string;
+    freeCashFlow?: string;
+  }> {
+    const url = `${ALPHA_VANTAGE_BASE_URL}?function=CASH_FLOW&symbol=${ticker}&apikey=${this.apiKey}`;
+
+    try {
+      const response = await fetch(url);
+      const data = (await response.json()) as any;
+
+      // Check for errors
+      if (data["Error Message"] || data["Note"]) {
+        return {}; // Return empty object if cash flow not available
+      }
+
+      // Get the most recent annual report
+      const annualReports = data.annualReports;
+      if (!annualReports || annualReports.length === 0) {
+        return {};
+      }
+
+      const latestReport = annualReports[0];
+
+      // Calculate free cash flow if not directly available
+      const operatingCashFlow = latestReport.operatingCashflow;
+      const capitalExpenditures = latestReport.capitalExpenditures;
+      let freeCashFlow = latestReport.freeCashFlow;
+
+      // If free cash flow is not provided, calculate it
+      if (!freeCashFlow && operatingCashFlow && capitalExpenditures) {
+        const ocf = parseFloat(operatingCashFlow);
+        const capex = parseFloat(capitalExpenditures);
+        if (!isNaN(ocf) && !isNaN(capex)) {
+          freeCashFlow = (ocf - Math.abs(capex)).toString();
+        }
+      }
+
+      return {
+        operatingCashFlow,
+        freeCashFlow,
+      };
+    } catch (error) {
+      console.warn(
+        `⚠️  Could not fetch cash flow: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      return {};
+    }
+  }
+
+  /**
    * Parse financial metrics from overview data
    */
-  private parseMetrics(overviewData: any): FinancialMetrics {
+  private parseMetrics(
+    overviewData: any,
+    balanceSheet?: any,
+    cashFlow?: any
+  ): FinancialMetrics {
     return {
       revenue: overviewData.RevenueTTM,
       revenueGrowthYoY: overviewData.QuarterlyRevenueGrowthYOY,
@@ -296,10 +401,13 @@ export class FinancialDataService {
       netIncome: overviewData.NetIncomeTTM,
       netMargin: overviewData.ProfitMargin,
       eps: overviewData.EPS,
-      totalAssets: overviewData.TotalAssets,
-      totalLiabilities: overviewData.TotalLiabilities,
-      totalEquity: overviewData.ShareholderEquity,
-      operatingCashFlow: overviewData.OperatingCashflowTTM,
+      // Balance sheet data from dedicated endpoint
+      totalAssets: balanceSheet?.totalAssets,
+      totalLiabilities: balanceSheet?.totalLiabilities,
+      totalEquity: balanceSheet?.totalEquity,
+      // Cash flow data from dedicated endpoint
+      operatingCashFlow: cashFlow?.operatingCashFlow,
+      freeCashFlow: cashFlow?.freeCashFlow,
       peRatio: overviewData.PERatio,
       pbRatio: overviewData.PriceToBookRatio,
       evToEbitda: overviewData.EVToEBITDA,
@@ -310,12 +418,17 @@ export class FinancialDataService {
   /**
    * Fetch complete financial data for a ticker
    */
-  async fetchFinancialData(ticker: string, interactive: boolean = false): Promise<FinancialData> {
+  async fetchFinancialData(
+    ticker: string,
+    interactive: boolean = false
+  ): Promise<FinancialData> {
     // Resolve ticker symbol (handles both tickers and company names)
     const resolved = await this.resolveTickerSymbol(ticker, interactive);
 
     if (resolved.isResolved) {
-      console.log(`✅ Resolved "${ticker}" to ${resolved.symbol} (${resolved.name})`);
+      console.log(
+        `✅ Resolved "${ticker}" to ${resolved.symbol} (${resolved.name})`
+      );
     }
 
     const tickerUpper = resolved.symbol.toUpperCase();
@@ -345,8 +458,15 @@ export class FinancialDataService {
     console.log(`💰 Fetching current quote...`);
     const quote = await this.fetchQuote(tickerUpper);
 
-    // Parse metrics
-    const metrics = this.parseMetrics(overviewData);
+    // Fetch balance sheet and cash flow data
+    console.log(`📋 Fetching balance sheet...`);
+    const balanceSheet = await this.fetchBalanceSheet(tickerUpper);
+
+    console.log(`💸 Fetching cash flow statement...`);
+    const cashFlow = await this.fetchCashFlow(tickerUpper);
+
+    // Parse metrics with all available data
+    const metrics = this.parseMetrics(overviewData, balanceSheet, cashFlow);
 
     // Add 52-week high/low from overview
     quote.fiftyTwoWeekHigh = overviewData["52WeekHigh"];
@@ -406,10 +526,48 @@ export class FinancialDataService {
 - **Net Margin**: ${metrics.netMargin || "N/A"}
 - **EPS**: $${metrics.eps || "N/A"}
 
+### Balance Sheet
+- **Total Assets**: ${
+      metrics.totalAssets
+        ? `$${(parseFloat(metrics.totalAssets) / 1e9).toFixed(2)}B`
+        : "N/A"
+    }
+- **Total Liabilities**: ${
+      metrics.totalLiabilities
+        ? `$${(parseFloat(metrics.totalLiabilities) / 1e9).toFixed(2)}B`
+        : "N/A"
+    }
+- **Shareholder Equity**: ${
+      metrics.totalEquity
+        ? `$${(parseFloat(metrics.totalEquity) / 1e9).toFixed(2)}B`
+        : "N/A"
+    }
+- **Debt-to-Equity Ratio**: ${
+      metrics.totalLiabilities && metrics.totalEquity
+        ? (
+            parseFloat(metrics.totalLiabilities) /
+            parseFloat(metrics.totalEquity)
+          ).toFixed(2)
+        : "N/A"
+    }
+
 ### Cash Flow
 - **Operating Cash Flow**: ${
       metrics.operatingCashFlow
-        ? `$${(parseInt(metrics.operatingCashFlow) / 1e9).toFixed(2)}B`
+        ? `$${(parseFloat(metrics.operatingCashFlow) / 1e9).toFixed(2)}B`
+        : "N/A"
+    }
+- **Free Cash Flow**: ${
+      metrics.freeCashFlow
+        ? `$${(parseFloat(metrics.freeCashFlow) / 1e9).toFixed(2)}B`
+        : "N/A"
+    }
+- **FCF Margin**: ${
+      metrics.freeCashFlow && metrics.revenue
+        ? (
+            (parseFloat(metrics.freeCashFlow) / parseFloat(metrics.revenue)) *
+            100
+          ).toFixed(2) + "%"
         : "N/A"
     }
 

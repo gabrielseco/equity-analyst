@@ -10,6 +10,7 @@ export interface GenerateReportOptions {
   input: AnalysisInput;
   model?: 'haiku' | 'sonnet' | 'opus';
   interactive?: boolean;
+  enableFactCheck?: boolean;
 }
 
 export class ReportGenerator {
@@ -20,7 +21,8 @@ export class ReportGenerator {
   private static estimateCost(
     inputTokens: number,
     outputTokens: number,
-    model: 'haiku' | 'sonnet' | 'opus'
+    model: 'haiku' | 'sonnet' | 'opus',
+    searchCount: number = 0
   ): number {
     // Pricing per million tokens (MTok)
     const pricing = {
@@ -33,14 +35,17 @@ export class ReportGenerator {
     const inputCost = (inputTokens / 1_000_000) * modelPricing.input;
     const outputCost = (outputTokens / 1_000_000) * modelPricing.output;
 
-    return inputCost + outputCost;
+    // Web search cost: $10 per 1,000 searches
+    const searchCost = (searchCount / 1_000) * 10;
+
+    return inputCost + outputCost + searchCost;
   }
 
   /**
    * Generate complete equity research report
    */
   static async generate(options: GenerateReportOptions): Promise<string> {
-    const { input, model, interactive = false } = options;
+    const { input, model, interactive = false, enableFactCheck = false } = options;
 
     try {
       // Get API keys
@@ -56,26 +61,36 @@ export class ReportGenerator {
       console.log('✓ Financial data fetched successfully\n');
 
       // Build analysis prompt
-      const prompt = buildAnalystPrompt(input, financialData);
+      const prompt = buildAnalystPrompt(input, financialData, enableFactCheck);
 
       // Generate analysis with Claude
+      const spinnerText = enableFactCheck
+        ? `Calling Claude API (${selectedModel}) with fact-checking enabled...`
+        : `Calling Claude API (${selectedModel})...`;
+
       const spinner = ora({
-        text: `Calling Claude API (${selectedModel})...`,
+        text: spinnerText,
         color: 'cyan',
       }).start();
 
       const anthropicService = new AnthropicService(apiKeys.anthropic, selectedModel);
-      const result = await anthropicService.generateAnalysis(prompt);
+      const result = await anthropicService.generateAnalysis(prompt, enableFactCheck);
 
       // Calculate approximate cost
+      const searchCount = result.searchCount || 0;
       const cost = ReportGenerator.estimateCost(
         result.usage.inputTokens,
         result.usage.outputTokens,
-        selectedModel
+        selectedModel,
+        searchCount
       );
 
+      const costBreakdown = enableFactCheck && searchCount > 0
+        ? ` | Est. cost: $${cost.toFixed(4)} (including ${searchCount} web searches)`
+        : ` | Est. cost: $${cost.toFixed(4)}`;
+
       spinner.succeed(
-        `Analysis generated | Tokens: ${result.usage.inputTokens.toLocaleString()} in / ${result.usage.outputTokens.toLocaleString()} out (${result.usage.totalTokens.toLocaleString()} total) | Est. cost: $${cost.toFixed(4)}`
+        `Analysis generated | Tokens: ${result.usage.inputTokens.toLocaleString()} in / ${result.usage.outputTokens.toLocaleString()} out (${result.usage.totalTokens.toLocaleString()} total)${costBreakdown}`
       );
       console.log();
 

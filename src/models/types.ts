@@ -65,6 +65,18 @@ export interface FinancialData {
   fetchedAt: string;
 }
 
+export interface FactCheckResult {
+  claim: string;
+  status: 'verified' | 'partially-verified' | 'conflicting' | 'not-found';
+  sources: {
+    url: string;
+    title: string;
+    snippet: string;
+    date?: string;
+  }[];
+  notes?: string;
+}
+
 export interface AnalysisReport {
   ticker: string;
   companyName: string;
@@ -73,6 +85,11 @@ export interface AnalysisReport {
   analysis: string;
   generatedAt: string;
   financialData: FinancialData;
+  factChecks?: FactCheckResult[];
+  searchUsage?: {
+    searchCount: number;
+    searchCost: number;
+  };
 }
 
 export interface Config {
