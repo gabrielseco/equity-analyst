@@ -1,0 +1,23 @@
+{
+  "name": "equity-analyst",
+  "module": "src/index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "analyze": "bun run src/index.ts analyze",
+    "build": "bun build src/index.ts --compile --outfile equity-analyst",
+    "dev": "bun --hot src/index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
+    "commander": "^14.0.2",
+    "ora": "^9.0.0"
+  }
+}

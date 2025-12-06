@@ -1,0 +1,38 @@
+# dependencies (bun install)
+node_modules
+
+# output
+out
+dist
+*.tgz
+
+# code coverage
+coverage
+*.lcov
+
+# logs
+logs
+_.log
+report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+
+# caches
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# IDE specific
+.idea
+.cursor/
+
+# Finder (MacOS) folder config
+.DS_Store
+
+# User config file
+.equity-analyst.config.json
+
+# Generated reports
+reports/
+
+# Build outputs
+equity-analyst
+*.exe
