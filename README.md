@@ -34,11 +34,13 @@ bun install
 You'll need two API keys:
 
 #### Anthropic API Key (Required)
+
 - Sign up at [Anthropic Console](https://console.anthropic.com/)
 - Create a new API key
 - **Cost**: Pay-as-you-go (Sonnet ~$0.10-0.30 per report)
 
 #### Alpha Vantage API Key (Required)
+
 - Get a FREE key at [Alpha Vantage](https://www.alphavantage.co/support/#api-key)
 - Free tier: 25 API calls per day
 - **Cost**: Free (or $50/month for premium)
@@ -67,15 +69,12 @@ For persistent settings, create `.equity-analyst.config.json`:
 ```json
 {
   "defaultReportsDir": "./reports",
-  "defaultModel": "sonnet",
-  "apiKeys": {
-    "anthropic": "sk-ant-...",
-    "alphaVantage": "..."
-  }
+  "defaultModel": "sonnet"
 }
 ```
 
 Config file locations (checked in order):
+
 1. `./.equity-analyst.config.json` (project root)
 2. `~/.equity-analyst.config.json` (home directory)
 
@@ -90,6 +89,7 @@ bun run start
 ```
 
 The tool will prompt you for:
+
 1. Stock ticker (e.g., AAPL, MSFT, GOOGL)
 2. Your investment thesis
 3. Analysis goal
@@ -127,9 +127,11 @@ Options:
 Choose the right model for your needs:
 
 - **haiku** - Fast & cheap (~$0.05/report, 30s)
+
   - Best for: Quick checks, multiple analyses
 
 - **sonnet** - Balanced (~$0.15/report, 45s) ⭐ **Recommended**
+
   - Best for: Most use cases, good quality/speed balance
 
 - **opus** - Most thorough (~$0.40/report, 60s)
@@ -190,6 +192,7 @@ Where should I save the report?
 ### 3. Review your report
 
 The generated markdown file includes:
+
 - Executive summary
 - Detailed fundamental analysis
 - Thesis validation with supporting/counter arguments
@@ -209,9 +212,11 @@ The generated markdown file includes:
 ## Investment Context
 
 ### Investment Thesis
+
 Apple's wearables and services segments will offset iPhone decline
 
 ### Analysis Goal
+
 Evaluate as core portfolio holding
 
 ## 1. Fundamental Analysis
@@ -221,15 +226,18 @@ Evaluate as core portfolio holding
 ## 2. Thesis Validation
 
 ### Supporting Arguments
+
 1. Services revenue grew 15% YoY...
 2. Wearables segment shows strong momentum...
 3. Apple's ecosystem creates switching costs...
 
 ### Counter-Arguments / Risks
+
 1. iPhone still represents 50% of revenue...
 2. Services growth may plateau as penetration matures...
 
 ### Final Verdict
+
 **Stance**: Bullish
 
 [Analysis...]
@@ -240,6 +248,7 @@ Evaluate as core portfolio holding
 ## API Rate Limits
 
 ### Alpha Vantage (Free Tier)
+
 - **25 calls per day**
 - **5 calls per minute**
 
@@ -248,6 +257,7 @@ Each analysis uses **2 API calls** (overview + quote), so you can generate ~12 r
 💡 **Tip**: Cache is planned for Phase 2 to reduce API calls!
 
 ### Anthropic
+
 - Pay-as-you-go pricing
 - No daily limits (just your budget)
 
@@ -258,6 +268,7 @@ Each analysis uses **2 API calls** (overview + quote), so you can generate ~12 r
 **Cause**: Alpha Vantage free tier limits (25 calls/day)
 
 **Solutions**:
+
 - Wait until tomorrow
 - Upgrade to Alpha Vantage premium ($50/month for 75 calls/minute)
 - Use different API key
@@ -267,6 +278,7 @@ Each analysis uses **2 API calls** (overview + quote), so you can generate ~12 r
 **Cause**: Ticker not found in Alpha Vantage database
 
 **Solutions**:
+
 - Verify ticker symbol (e.g., AAPL not APL)
 - Check if stock is listed on major US exchanges
 - Some international stocks may not be available
@@ -276,6 +288,7 @@ Each analysis uses **2 API calls** (overview + quote), so you can generate ~12 r
 **Cause**: Environment variables not set
 
 **Solutions**:
+
 - Create `.env` file with your keys
 - Or add to config file
 - Or set environment variables manually
@@ -285,6 +298,7 @@ Each analysis uses **2 API calls** (overview + quote), so you can generate ~12 r
 **Cause**: Network issues or API downtime
 
 **Solutions**:
+
 - Check internet connection
 - Verify API key is valid
 - Try again in a few minutes
@@ -367,18 +381,21 @@ eq MSFT
 ## Roadmap
 
 ### Phase 2 - Enhanced Features (Coming Soon)
+
 - Git-based report versioning
 - API response caching (24hr TTL)
 - Peer comparison analysis
 - Rate limit handling
 
 ### Phase 3 - Polish & UX
+
 - Rich CLI output (spinners, progress bars)
 - Mermaid charts in reports
 - Comprehensive testing
 - PDF export
 
 ### Future Enhancements
+
 - Batch analysis (multiple tickers)
 - Portfolio mode
 - Custom report templates
@@ -388,11 +405,13 @@ eq MSFT
 ## Cost Estimation
 
 ### Per Report
+
 - **Alpha Vantage**: Free (25/day limit)
 - **Claude Sonnet**: ~$0.10-0.30
 - **Total**: ~$0.10-0.30 per report
 
 ### Monthly (50 reports)
+
 - **Alpha Vantage**: Free or $50 (premium)
 - **Claude**: ~$5-15
 - **Total**: $5-65/month depending on usage
