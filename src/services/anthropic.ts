@@ -32,13 +32,15 @@ export class AnthropicService {
 
   /**
    * Generate equity research analysis using Claude with optional fact-checking
+   * Now supports prompt caching to reduce costs by ~90% on repeated analyses
    */
   async generateAnalysis(
     prompt: string,
-    enableFactCheck: boolean = false
+    enableFactCheck: boolean = false,
+    systemPrompt?: string
   ): Promise<AnalysisResult> {
     try {
-      // Build the base request parameters
+      // Build the base request parameters with prompt caching
       const requestParams: Anthropic.MessageCreateParams = {
         model: this.model,
         max_tokens: 8000,
@@ -51,13 +53,25 @@ export class AnthropicService {
         ],
       };
 
+      // Add system prompt with caching if provided
+      // This caches the financial data and instructions for 5 minutes
+      if (systemPrompt) {
+        requestParams.system = [
+          {
+            type: 'text',
+            text: systemPrompt,
+            cache_control: { type: 'ephemeral' },
+          } as any,
+        ];
+      }
+
       // Add web search tool if fact-checking is enabled
       if (enableFactCheck) {
         requestParams.tools = [
           {
             type: 'web_search_20250305',
             name: 'web_search',
-            max_uses: 15, // Moderate fact-checking: up to 15 searches
+            max_uses: 25, // Allow up to 25 searches (will be limited by prompt instructions)
           } as any, // TypeScript might not have latest types yet
         ];
       }

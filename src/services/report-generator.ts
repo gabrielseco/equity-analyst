@@ -83,8 +83,12 @@ export class ReportGenerator {
         );
       }
 
-      // Build analysis prompt
-      const prompt = buildAnalystPrompt(input, financialData, enableFactCheck);
+      // Build analysis prompt (now returns separate system and user prompts)
+      const { systemPrompt, userPrompt } = buildAnalystPrompt(
+        input,
+        financialData,
+        enableFactCheck
+      );
 
       // Generate analysis with Claude
       const spinnerText = enableFactCheck
@@ -101,8 +105,9 @@ export class ReportGenerator {
         selectedModel
       );
       const result = await anthropicService.generateAnalysis(
-        prompt,
-        enableFactCheck
+        userPrompt,
+        enableFactCheck,
+        systemPrompt // Pass system prompt for caching
       );
 
       // Calculate approximate cost

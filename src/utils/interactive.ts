@@ -99,10 +99,30 @@ export async function runInteractive(): Promise<AnalysisInput> {
 
     console.log(`✓ Report will be saved to: ${saveTo}\n`);
 
-    // Step 5: Ask about fact-checking
+    // Step 5: Ask about analysis depth
+    console.log('Select analysis depth:');
+    console.log('  1. Quick    - Fast screening, key metrics only (~$0.25-0.35, ~8 searches)');
+    console.log('  2. Standard - Comprehensive analysis [RECOMMENDED] (~$0.45-0.60, ~15 searches)');
+    console.log('  3. Deep     - Maximum detail, extensive research (~$0.90-1.20, ~25 searches)');
+
+    let depth: 'quick' | 'standard' | 'deep' = 'standard';
+    const depthInput = await question(rl, '  (1/2/3, default: 2) > ');
+
+    if (depthInput === '1') {
+      depth = 'quick';
+      console.log('✓ Quick analysis selected\n');
+    } else if (depthInput === '3') {
+      depth = 'deep';
+      console.log('✓ Deep analysis selected\n');
+    } else {
+      depth = 'standard';
+      console.log('✓ Standard analysis selected\n');
+    }
+
+    // Step 6: Ask about fact-checking
     console.log('Enable fact-checking with web search?');
     console.log(
-      '  This will verify claims using current sources (+15-30 seconds, +$0.10-0.15 cost)'
+      '  This will verify claims using current sources (adds time and cost based on depth)'
     );
     const factCheckInput = await question(rl, '  (Y/n) > ');
     const enableFactCheck =
@@ -116,7 +136,7 @@ export async function runInteractive(): Promise<AnalysisInput> {
       console.log('✓ Fact-checking disabled\n');
     }
 
-    // Step 6: Ask about PDF export
+    // Step 7: Ask about PDF export
     console.log('Generate PDF version for easy sharing?');
     console.log(
       '  Markdown will always be generated. PDF adds a shareable format (+2-3 seconds)'
@@ -140,6 +160,7 @@ export async function runInteractive(): Promise<AnalysisInput> {
       investmentThesis,
       goal,
       saveTo,
+      depth,
       enableFactCheck,
       pdf: generatePdf,
     };

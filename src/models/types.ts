@@ -6,6 +6,7 @@ export interface AnalysisInput {
   enableFactCheck?: boolean;
   pdf?: boolean;
   pdfOnly?: boolean;
+  depth?: 'quick' | 'standard' | 'deep'; // Analysis depth
 }
 
 export interface CompanyOverview {
