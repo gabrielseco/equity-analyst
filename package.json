@@ -29,6 +29,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
     "commander": "^14.0.2",
-    "ora": "^9.0.0"
+    "marked": "^17.0.1",
+    "ora": "^9.0.0",
+    "puppeteer": "^24.32.0"
   }
 }

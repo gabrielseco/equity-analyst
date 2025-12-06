@@ -3,6 +3,7 @@ import { FinancialDataService } from './financial-data';
 import { AnthropicService } from './anthropic';
 import { buildAnalystPrompt } from '../prompts/analyst-prompt';
 import { MarkdownExporter } from '../utils/markdown-export';
+import { PdfExporter } from '../utils/pdf-export';
 import { getApiKeys, getDefaultModel } from '../config/settings';
 import ora from 'ora';
 
@@ -11,6 +12,8 @@ export interface GenerateReportOptions {
   model?: 'haiku' | 'sonnet' | 'opus';
   interactive?: boolean;
   enableFactCheck?: boolean;
+  pdf?: boolean;
+  pdfOnly?: boolean;
 }
 
 export class ReportGenerator {
@@ -50,6 +53,8 @@ export class ReportGenerator {
       model,
       interactive = false,
       enableFactCheck = false,
+      pdf = false,
+      pdfOnly = false,
     } = options;
 
     try {
@@ -145,13 +150,30 @@ export class ReportGenerator {
         searchCount: enableFactCheck ? searchCount : undefined,
       };
 
-      // Save to markdown
+      // Save reports
       console.log('💾 Saving report...\n');
       const savePath = input.saveTo || './reports';
-      const filePath = await MarkdownExporter.saveReport(report, savePath);
+      let filePath: string;
 
-      console.log(`✅ Report saved successfully!`);
-      console.log(`📄 Location: ${filePath}`);
+      if (pdfOnly) {
+        // Only generate PDF
+        filePath = await PdfExporter.savePDF(report, savePath);
+        console.log(`✅ PDF report saved successfully!`);
+        console.log(`📄 Location: ${filePath}`);
+      } else {
+        // Always save markdown
+        filePath = await MarkdownExporter.saveReport(report, savePath);
+        console.log(`✅ Markdown report saved successfully!`);
+        console.log(`📄 Location: ${filePath}`);
+
+        // Also save PDF if requested
+        if (pdf) {
+          console.log('\n📄 Generating PDF version...');
+          const pdfFilePath = await PdfExporter.savePDF(report, savePath);
+          console.log(`✅ PDF report saved successfully!`);
+          console.log(`📄 Location: ${pdfFilePath}`);
+        }
+      }
 
       // Show summary
       console.log('\n📊 Report Summary:');

@@ -4,6 +4,8 @@ export interface AnalysisInput {
   goal: string;
   saveTo?: string;
   enableFactCheck?: boolean;
+  pdf?: boolean;
+  pdfOnly?: boolean;
 }
 
 export interface CompanyOverview {

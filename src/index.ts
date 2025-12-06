@@ -24,6 +24,8 @@ async function handleAnalyze(
     saveTo?: string;
     model?: 'haiku' | 'sonnet' | 'opus';
     factCheck?: boolean;
+    pdf?: boolean;
+    pdfOnly?: boolean;
   }
 ) {
   try {
@@ -66,6 +68,8 @@ async function handleAnalyze(
       model: options.model,
       interactive: isInteractive,
       enableFactCheck: options.factCheck || input.enableFactCheck || false,
+      pdf: options.pdf || input.pdf || false,
+      pdfOnly: options.pdfOnly || input.pdfOnly || false,
     });
   } catch (error) {
     console.error(
@@ -113,6 +117,8 @@ program
     '-f, --fact-check',
     'Enable web search fact-checking (adds ~$0.10-0.15 per report)'
   )
+  .option('-p, --pdf', 'Also generate PDF version of the report')
+  .option('--pdf-only', 'Generate only PDF (skip markdown)')
   .action(handleAnalyze);
 
 // Make 'analyze' the default command
@@ -130,6 +136,8 @@ program
     '-f, --fact-check',
     'Enable web search fact-checking (adds ~$0.10-0.15 per report)'
   )
+  .option('-p, --pdf', 'Also generate PDF version of the report')
+  .option('--pdf-only', 'Generate only PDF (skip markdown)')
   .action(handleAnalyze);
 
 program.parse();

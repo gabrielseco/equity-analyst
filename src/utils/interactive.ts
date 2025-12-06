@@ -24,14 +24,6 @@ function question(rl: readline.Interface, prompt: string): Promise<string> {
 }
 
 /**
- * Validate ticker symbol format (basic validation)
- */
-function validateTicker(ticker: string): boolean {
-  // Allow 1-5 uppercase letters, possibly with a dot for international stocks
-  return /^[A-Z]{1,5}(\.[A-Z]{1,2})?$/.test(ticker.toUpperCase());
-}
-
-/**
  * Run interactive mode to gather analysis parameters
  */
 export async function runInteractive(): Promise<AnalysisInput> {
@@ -124,6 +116,23 @@ export async function runInteractive(): Promise<AnalysisInput> {
       console.log('✓ Fact-checking disabled\n');
     }
 
+    // Step 6: Ask about PDF export
+    console.log('Generate PDF version for easy sharing?');
+    console.log(
+      '  Markdown will always be generated. PDF adds a shareable format (+2-3 seconds)'
+    );
+    const pdfInput = await question(rl, '  (Y/n) > ');
+    const generatePdf =
+      !pdfInput ||
+      pdfInput.toLowerCase() === 'y' ||
+      pdfInput.toLowerCase() === 'yes';
+
+    if (generatePdf) {
+      console.log('✓ PDF export enabled\n');
+    } else {
+      console.log('✓ PDF export disabled\n');
+    }
+
     rl.close();
 
     return {
@@ -132,6 +141,7 @@ export async function runInteractive(): Promise<AnalysisInput> {
       goal,
       saveTo,
       enableFactCheck,
+      pdf: generatePdf,
     };
   } catch (error) {
     rl.close();
