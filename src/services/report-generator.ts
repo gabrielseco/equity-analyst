@@ -4,7 +4,11 @@ import { AnthropicService } from './anthropic';
 import { buildAnalystPrompt } from '../prompts/analyst-prompt';
 import { MarkdownExporter } from '../utils/markdown-export';
 import { PdfExporter } from '../utils/pdf-export';
-import { getApiKeys, getDefaultModel } from '../config/settings';
+import {
+  getApiKeys,
+  getDefaultModel,
+  getAlphaVantageApiDelay,
+} from '../config/settings';
 import ora from 'ora';
 
 export interface GenerateReportOptions {
@@ -58,14 +62,18 @@ export class ReportGenerator {
     } = options;
 
     try {
-      // Get API keys
+      // Get API keys and configuration
       const apiKeys = await getApiKeys();
       const selectedModel = model || (await getDefaultModel());
+      const apiDelay = await getAlphaVantageApiDelay();
 
       console.log('🔍 Fetching financial data...\n');
 
-      // Fetch financial data
-      const financialService = new FinancialDataService(apiKeys.alphaVantage);
+      // Fetch financial data with rate limiting
+      const financialService = new FinancialDataService(
+        apiKeys.alphaVantage,
+        apiDelay
+      );
       const financialData = await financialService.fetchFinancialData(
         input.ticker,
         interactive

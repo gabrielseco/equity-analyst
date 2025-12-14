@@ -12,9 +12,33 @@ const CACHE_DIR = '.cache/financial-data';
 
 export class FinancialDataService {
   private apiKey: string;
+  private lastApiCallTime: number = 0;
+  private readonly apiCallDelayMs: number;
 
-  constructor(apiKey: string) {
+  constructor(apiKey: string, apiCallDelayMs: number = 12000) {
     this.apiKey = apiKey;
+    // Default 12 seconds between calls (5 calls per minute = 12s/call)
+    // Alpha Vantage free tier allows 5 API calls per minute
+    this.apiCallDelayMs = apiCallDelayMs;
+  }
+
+  /**
+   * Rate limiting delay to prevent API throttling
+   * Ensures minimum delay between API calls
+   */
+  private async rateLimit(): Promise<void> {
+    const now = Date.now();
+    const timeSinceLastCall = now - this.lastApiCallTime;
+
+    if (timeSinceLastCall < this.apiCallDelayMs) {
+      const delayNeeded = this.apiCallDelayMs - timeSinceLastCall;
+      console.log(
+        `⏱️  Rate limiting: waiting ${(delayNeeded / 1000).toFixed(1)}s before next API call...`
+      );
+      await new Promise((resolve) => setTimeout(resolve, delayNeeded));
+    }
+
+    this.lastApiCallTime = Date.now();
   }
 
   /**
@@ -34,6 +58,7 @@ export class FinancialDataService {
     )}&apikey=${this.apiKey}`;
 
     try {
+      await this.rateLimit();
       const response = await fetch(url);
       const data = (await response.json()) as {
         'Error Message'?: string;
@@ -86,6 +111,7 @@ export class FinancialDataService {
     // First, try to check if input is already a valid ticker by attempting to fetch overview
     // This is a quick check - if it works, we don't need to search
     try {
+      await this.rateLimit();
       const url = `${ALPHA_VANTAGE_BASE_URL}?function=OVERVIEW&symbol=${inputUpper}&apikey=${this.apiKey}`;
       const response = await fetch(url);
       const data = (await response.json()) as any;
@@ -206,6 +232,7 @@ export class FinancialDataService {
     const url = `${ALPHA_VANTAGE_BASE_URL}?function=OVERVIEW&symbol=${ticker}&apikey=${this.apiKey}`;
 
     try {
+      await this.rateLimit();
       const response = await fetch(url);
       const data = (await response.json()) as {
         'Error Message'?: string;
@@ -255,6 +282,7 @@ export class FinancialDataService {
     const url = `${ALPHA_VANTAGE_BASE_URL}?function=GLOBAL_QUOTE&symbol=${ticker}&apikey=${this.apiKey}`;
 
     try {
+      await this.rateLimit();
       const response = await fetch(url);
       const data = (await response.json()) as any;
 
@@ -294,6 +322,7 @@ export class FinancialDataService {
     const url = `${ALPHA_VANTAGE_BASE_URL}?function=BALANCE_SHEET&symbol=${ticker}&apikey=${this.apiKey}`;
 
     try {
+      await this.rateLimit();
       const response = await fetch(url);
       const data = (await response.json()) as any;
 
@@ -335,6 +364,7 @@ export class FinancialDataService {
     const url = `${ALPHA_VANTAGE_BASE_URL}?function=CASH_FLOW&symbol=${ticker}&apikey=${this.apiKey}`;
 
     try {
+      await this.rateLimit();
       const response = await fetch(url);
       const data = (await response.json()) as any;
 
@@ -495,6 +525,7 @@ export class FinancialDataService {
     console.log(`📊 Fetching financial data for ${tickerUpper}...`);
 
     // Fetch overview data (contains most metrics)
+    await this.rateLimit();
     const url = `${ALPHA_VANTAGE_BASE_URL}?function=OVERVIEW&symbol=${tickerUpper}&apikey=${this.apiKey}`;
     const response = await fetch(url);
     const overviewData = (await response.json()) as any;

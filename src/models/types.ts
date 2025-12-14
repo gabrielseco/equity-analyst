@@ -101,4 +101,10 @@ export interface AnalysisReport {
 export interface Config {
   defaultReportsDir?: string;
   defaultModel?: 'haiku' | 'sonnet' | 'opus';
+  /**
+   * Delay in milliseconds between Alpha Vantage API calls (default: 12000)
+   * Alpha Vantage free tier allows 5 calls per minute (12s per call)
+   * Premium users can reduce this value
+   */
+  alphaVantageApiDelayMs?: number;
 }

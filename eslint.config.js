@@ -36,6 +36,10 @@ export default [
         Response: 'readonly',
         Request: 'readonly',
         Headers: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
       },
     },
     plugins: {

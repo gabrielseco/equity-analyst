@@ -118,3 +118,11 @@ export async function getDefaultModel(): Promise<'haiku' | 'sonnet' | 'opus'> {
   const config = await loadConfig();
   return config.defaultModel || 'sonnet';
 }
+
+/**
+ * Get Alpha Vantage API delay in milliseconds
+ */
+export async function getAlphaVantageApiDelay(): Promise<number> {
+  const config = await loadConfig();
+  return config.alphaVantageApiDelayMs || 12000; // Default: 12 seconds (5 calls per minute)
+}
