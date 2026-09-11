@@ -10,6 +10,18 @@ import { join } from 'path';
 const ALPHA_VANTAGE_BASE_URL = 'https://www.alphavantage.co/query';
 const CACHE_DIR = '.cache/financial-data';
 
+/**
+ * Thrown when Alpha Vantage's daily request quota has been exhausted.
+ * Kept distinct from other API errors so callers can detect it specifically
+ * (e.g. to stop retrying/falling back instead of misreporting "not found").
+ */
+export class AlphaVantageQuotaError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AlphaVantageQuotaError';
+  }
+}
+
 export class FinancialDataService {
   private apiKey: string;
   private lastApiCallTime: number = 0;
@@ -42,6 +54,20 @@ export class FinancialDataService {
   }
 
   /**
+   * Alpha Vantage signals the daily quota (25 calls/day on the free tier)
+   * with an `Information` field rather than the `Note`/`Error Message`
+   * fields used for other errors - without this check, an exhausted quota
+   * looks identical to "no data found" and gets misreported as such.
+   */
+  private checkQuotaExceeded(data: { Information?: string }): void {
+    if (data['Information']) {
+      throw new AlphaVantageQuotaError(
+        `Alpha Vantage daily rate limit exceeded (25 requests/day on the free tier): ${data['Information']}`
+      );
+    }
+  }
+
+  /**
    * Search for ticker symbol by company name
    */
   private async searchSymbol(query: string): Promise<
@@ -63,8 +89,11 @@ export class FinancialDataService {
       const data = (await response.json()) as {
         'Error Message'?: string;
         Note?: string;
+        Information?: string;
         bestMatches?: any[];
       };
+
+      this.checkQuotaExceeded(data);
 
       if (data['Error Message']) {
         throw new Error(`Symbol search failed: ${data['Error Message']}`);
@@ -86,6 +115,9 @@ export class FinancialDataService {
         matchScore: match['9. matchScore'],
       }));
     } catch (error) {
+      if (error instanceof AlphaVantageQuotaError) {
+        throw error;
+      }
       throw new Error(
         `Failed to search symbol: ${
           error instanceof Error ? error.message : String(error)
@@ -116,6 +148,8 @@ export class FinancialDataService {
       const response = await fetch(url);
       const data = (await response.json()) as any;
 
+      this.checkQuotaExceeded(data);
+
       // If we get valid data back, it's already a ticker
       if (data.Symbol && !data['Error Message'] && !data['Note']) {
         return {
@@ -125,7 +159,12 @@ export class FinancialDataService {
         };
       }
     } catch (error) {
-      // If overview check fails, fall through to search
+      // Quota exhaustion isn't "this isn't a ticker" - don't fall through to
+      // a search that will just fail the same way and misreport as "not found".
+      if (error instanceof AlphaVantageQuotaError) {
+        throw error;
+      }
+      // Otherwise the overview check failed for some other reason - fall through to search
     }
 
     // If we get here, input is likely a company name - search for it
@@ -237,6 +276,7 @@ export class FinancialDataService {
       const data = (await response.json()) as {
         'Error Message'?: string;
         Note?: string;
+        Information?: string;
         Name?: string;
         Symbol?: string;
         Sector?: string;
@@ -246,6 +286,8 @@ export class FinancialDataService {
         Exchange?: string;
         Currency?: string;
       };
+
+      this.checkQuotaExceeded(data);
 
       // Check for API errors
       if (data['Error Message']) {
@@ -267,6 +309,9 @@ export class FinancialDataService {
         currency: data.Currency,
       };
     } catch (error) {
+      if (error instanceof AlphaVantageQuotaError) {
+        throw error;
+      }
       throw new Error(
         `Failed to fetch company overview: ${
           error instanceof Error ? error.message : String(error)
@@ -286,6 +331,8 @@ export class FinancialDataService {
       const response = await fetch(url);
       const data = (await response.json()) as any;
 
+      this.checkQuotaExceeded(data);
+
       const quote = data['Global Quote'];
 
       if (!quote || Object.keys(quote).length === 0) {
@@ -303,6 +350,9 @@ export class FinancialDataService {
         volume: quote['06. volume'] || '0',
       };
     } catch (error) {
+      if (error instanceof AlphaVantageQuotaError) {
+        throw error;
+      }
       throw new Error(
         `Failed to fetch stock quote: ${
           error instanceof Error ? error.message : String(error)
@@ -325,6 +375,8 @@ export class FinancialDataService {
       await this.rateLimit();
       const response = await fetch(url);
       const data = (await response.json()) as any;
+
+      this.checkQuotaExceeded(data);
 
       // Check for errors
       if (data['Error Message'] || data['Note']) {
@@ -367,6 +419,8 @@ export class FinancialDataService {
       await this.rateLimit();
       const response = await fetch(url);
       const data = (await response.json()) as any;
+
+      this.checkQuotaExceeded(data);
 
       // Check for errors
       if (data['Error Message'] || data['Note']) {
@@ -529,6 +583,8 @@ export class FinancialDataService {
     const url = `${ALPHA_VANTAGE_BASE_URL}?function=OVERVIEW&symbol=${tickerUpper}&apikey=${this.apiKey}`;
     const response = await fetch(url);
     const overviewData = (await response.json()) as any;
+
+    this.checkQuotaExceeded(overviewData);
 
     // Check for errors
     if (overviewData['Error Message']) {
